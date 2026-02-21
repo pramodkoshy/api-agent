@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Globe, Key, Plug } from "lucide-react";
+import { Globe, Key, Plug, Plus } from "lucide-react";
 
 interface ApiConfigFormProps {
   onConnect: (config: ApiConfig) => void;
@@ -46,6 +46,12 @@ export function ApiConfigForm({
       authHeaderName: authHeaderName || "Authorization",
       baseUrl: baseUrl || undefined,
     });
+
+    // Reset form for adding another API
+    setTargetUrl("");
+    setApiName("");
+    setAuthHeader("");
+    setBaseUrl("");
   };
 
   return (
@@ -53,7 +59,7 @@ export function ApiConfigForm({
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
           <Globe className="h-5 w-5" />
-          API Connection
+          {isConnected ? "Add Another API" : "API Connection"}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -72,13 +78,11 @@ export function ApiConfigForm({
                 }
                 value={targetUrl}
                 onChange={(e) => setTargetUrl(e.target.value)}
-                disabled={isConnected}
               />
             </div>
             <Select
               value={apiType}
               onValueChange={(v) => setApiType(v as "graphql" | "rest")}
-              disabled={isConnected}
             >
               <SelectTrigger className="w-[120px]">
                 <SelectValue />
@@ -103,7 +107,6 @@ export function ApiConfigForm({
                   value={authHeader}
                   onChange={(e) => setAuthHeader(e.target.value)}
                   className="pl-9"
-                  disabled={isConnected}
                   type="password"
                 />
               </div>
@@ -122,7 +125,6 @@ export function ApiConfigForm({
                     placeholder="my-api"
                     value={apiName}
                     onChange={(e) => setApiName(e.target.value)}
-                    disabled={isConnected}
                   />
                 </div>
                 <div className="flex-1">
@@ -134,7 +136,6 @@ export function ApiConfigForm({
                     placeholder="Authorization"
                     value={authHeaderName}
                     onChange={(e) => setAuthHeaderName(e.target.value)}
-                    disabled={isConnected}
                   />
                 </div>
               </div>
@@ -148,7 +149,6 @@ export function ApiConfigForm({
                     placeholder="https://api.example.com/v1"
                     value={baseUrl}
                     onChange={(e) => setBaseUrl(e.target.value)}
-                    disabled={isConnected}
                   />
                 </div>
               )}
@@ -156,21 +156,19 @@ export function ApiConfigForm({
           )}
 
           <div className="flex items-center gap-2">
-            {isConnected ? (
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={onDisconnect}
-                className="w-full"
-              >
-                Disconnect
-              </Button>
-            ) : (
-              <Button type="submit" disabled={!targetUrl} className="w-full">
-                <Plug className="mr-2 h-4 w-4" />
-                Connect
-              </Button>
-            )}
+            <Button type="submit" disabled={!targetUrl} className="w-full">
+              {isConnected ? (
+                <>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add API
+                </>
+              ) : (
+                <>
+                  <Plug className="mr-2 h-4 w-4" />
+                  Connect
+                </>
+              )}
+            </Button>
             <Button
               type="button"
               variant="ghost"

@@ -3,35 +3,24 @@
 import { useEffect } from "react";
 import { useCopilotChat } from "@copilotkit/react-core";
 import { CopilotChat } from "@copilotkit/react-ui";
-import type { ApiConfig } from "@/types/api-config";
 
 interface ChatPanelProps {
   isConnected: boolean;
-  apiConfig: ApiConfig | null;
   onDataReceived?: (data: string) => void;
 }
 
-export function ChatPanel({ isConnected, apiConfig, onDataReceived }: ChatPanelProps) {
-  const { setMcpServers, visibleMessages, isLoading } = useCopilotChat();
+/**
+ * Chat panel using CopilotKit's built-in chat component.
+ *
+ * All MCP communication goes through the Mastra agent on the server side:
+ *   CopilotChat → CopilotRuntime → MastraAgent → Mastra Agent (MCPClient + MongoDB tools)
+ *
+ * No direct MCP proxy — Mastra is the sole bridge to the Agoda MCP service.
+ */
+export function ChatPanel({ isConnected, onDataReceived }: ChatPanelProps) {
+  const { visibleMessages, isLoading } = useCopilotChat();
 
-  // Configure MCP server connection when API config changes
-  useEffect(() => {
-    if (isConnected && apiConfig) {
-      const mcpUrl = new URL("/api/mcp-proxy", window.location.origin);
-      mcpUrl.searchParams.set("targetUrl", apiConfig.targetUrl);
-      mcpUrl.searchParams.set("apiType", apiConfig.apiType);
-      if (apiConfig.authHeader) mcpUrl.searchParams.set("authHeader", apiConfig.authHeader);
-      if (apiConfig.authHeaderName) mcpUrl.searchParams.set("authHeaderName", apiConfig.authHeaderName);
-      if (apiConfig.apiName) mcpUrl.searchParams.set("apiName", apiConfig.apiName);
-      if (apiConfig.baseUrl) mcpUrl.searchParams.set("baseUrl", apiConfig.baseUrl);
-
-      setMcpServers([{ endpoint: mcpUrl.toString() }]);
-    } else {
-      setMcpServers([]);
-    }
-  }, [isConnected, apiConfig, setMcpServers]);
-
-  // Track last assistant message for data extraction
+  // Track last assistant message for data extraction into the results panel
   useEffect(() => {
     if (!onDataReceived || !visibleMessages?.length) return;
     const last = visibleMessages[visibleMessages.length - 1];
@@ -56,7 +45,9 @@ export function ChatPanel({ isConnected, apiConfig, onDataReceived }: ChatPanelP
       className="h-full"
       labels={{
         title: "API Agent",
-        initial: "Ask a question about your API. Results will appear as tables and charts in the results panel.",
+        initial:
+          "Ask a question about your API. I can query data, save results to MongoDB, " +
+          "combine datasets from different APIs, and display results as tables and charts.",
         placeholder: "What data would you like to explore?",
       }}
     />

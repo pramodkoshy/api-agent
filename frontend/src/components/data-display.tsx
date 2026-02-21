@@ -17,12 +17,12 @@ export function DataDisplay({ result }: DataDisplayProps) {
 
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
+      <CardHeader className="pb-2 px-3 sm:px-6">
+        <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
           {result.data.length} row(s) returned
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-3 sm:px-6">
         {hasChart ? (
           <Tabs defaultValue={defaultTab}>
             <TabsList className="mb-2">

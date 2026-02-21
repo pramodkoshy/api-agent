@@ -62,6 +62,7 @@ export async function POST(req: NextRequest) {
   // Create CopilotRuntime with the Mastra-wrapped agent
   const runtime = new CopilotRuntime({
     agents: {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- CopilotKit runtime requires this cast
       "api-explorer": aguiAgent as any,
     },
   });

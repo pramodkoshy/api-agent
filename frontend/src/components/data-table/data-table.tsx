@@ -95,9 +95,9 @@ export function DataTable({ data }: DataTableProps) {
         placeholder="Filter results..."
         value={globalFilter}
         onChange={(e) => setGlobalFilter(e.target.value)}
-        className="max-w-sm h-8 text-sm"
+        className="w-full sm:max-w-sm h-8 text-sm"
       />
-      <div className="rounded-md border overflow-auto max-h-[400px]">
+      <div className="rounded-md border overflow-auto max-h-[300px] sm:max-h-[400px] -mx-px">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((hg) => (
@@ -141,11 +141,11 @@ export function DataTable({ data }: DataTableProps) {
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-muted-foreground">
+      <div className="flex items-center justify-between text-xs sm:text-sm gap-2">
+        <span className="text-muted-foreground shrink-0">
           {table.getFilteredRowModel().rows.length} row(s)
         </span>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 sm:gap-1">
           <Button
             variant="outline"
             size="icon"

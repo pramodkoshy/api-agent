@@ -6,6 +6,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "API Agent Explorer",
   description: "Chat with any GraphQL or REST API using natural language",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
 };
 
 export default function RootLayout({
@@ -15,7 +16,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="font-sans antialiased">
+      <body className="font-sans antialiased overflow-hidden">
         <TooltipProvider>{children}</TooltipProvider>
       </body>
     </html>

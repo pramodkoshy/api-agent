@@ -17,7 +17,6 @@
     "@mastra/core": "^1.5.0",
     "@mastra/mcp": "^1.0.1",
     "@tanstack/react-table": "^8.21.3",
-    "@types/uuid": "^10.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.575.0",

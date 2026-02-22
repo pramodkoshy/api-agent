@@ -24,6 +24,7 @@ interface ApiConfigFormProps {
 export function ApiConfigForm({
   onConnect,
   isConnected,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- reserved for disconnect button (future)
   onDisconnect,
 }: ApiConfigFormProps) {
   const [targetUrl, setTargetUrl] = useState("");
@@ -56,16 +57,16 @@ export function ApiConfigForm({
 
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Globe className="h-5 w-5" />
+      <CardHeader className="pb-2 sm:pb-3">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <Globe className="h-5 w-5 shrink-0" />
           {isConnected ? "Add Another API" : "API Connection"}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="flex gap-2">
-            <div className="flex-1">
+        <form onSubmit={handleSubmit} className="space-y-2 sm:space-y-3">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex-1 min-w-0">
               <Label htmlFor="targetUrl" className="sr-only">
                 API URL
               </Label>
@@ -84,7 +85,7 @@ export function ApiConfigForm({
               value={apiType}
               onValueChange={(v) => setApiType(v as "graphql" | "rest")}
             >
-              <SelectTrigger className="w-[120px]">
+              <SelectTrigger className="w-full sm:w-[120px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

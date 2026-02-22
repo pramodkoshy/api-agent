@@ -67,6 +67,7 @@ export async function createApiAgent(apiConfigs: ApiConfig[]): Promise<{
   mcpClients: MCPClient[];
 }> {
   const mcpClients: MCPClient[] = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- MCP tools have dynamic types
   let allMcpTools: Record<string, any> = {};
 
   // Create an MCPClient for each configured API

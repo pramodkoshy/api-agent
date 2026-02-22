@@ -34,7 +34,7 @@ export function ChatPanel({ isConnected, onDataReceived }: ChatPanelProps) {
 
   if (!isConnected) {
     return (
-      <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+      <div className="flex items-center justify-center h-full text-muted-foreground text-xs sm:text-sm px-4 text-center">
         Connect to an API to start chatting
       </div>
     );

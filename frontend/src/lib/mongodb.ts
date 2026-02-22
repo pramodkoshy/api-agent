@@ -55,6 +55,7 @@ export async function saveDataset(dataset: Omit<StoredDataset, "_id" | "createdA
   const result = await col.insertOne({
     ...dataset,
     createdAt: new Date(),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- MongoDB Document type mismatch
   } as any);
   return result.insertedId.toString();
 }
@@ -66,12 +67,14 @@ export async function listDatasets(): Promise<Array<Omit<StoredDataset, "data">>
     .find({}, { projection: { data: 0 } })
     .sort({ createdAt: -1 })
     .limit(50)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- MongoDB Document to StoredDataset cast
     .toArray() as any;
 }
 
 /** Retrieve a full dataset by name. */
 export async function getDatasetByName(name: string): Promise<StoredDataset | null> {
   const col = await getCollection(DATASETS_COLLECTION);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- MongoDB Document to StoredDataset cast
   return col.findOne({ name }) as any;
 }
 
@@ -79,6 +82,7 @@ export async function getDatasetByName(name: string): Promise<StoredDataset | nu
 export async function getDatasetById(id: string): Promise<StoredDataset | null> {
   const col = await getCollection(DATASETS_COLLECTION);
   const { ObjectId } = await import("mongodb");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- MongoDB ObjectId type cast
   return col.findOne({ _id: new ObjectId(id) as any }) as any;
 }
 

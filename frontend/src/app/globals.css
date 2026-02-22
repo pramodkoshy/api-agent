@@ -123,4 +123,20 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Ensure touch targets are at least 44px on mobile */
+  @media (max-width: 640px) {
+    button,
+    [role="button"],
+    input,
+    select,
+    textarea {
+      min-height: 44px;
+    }
+    /* Smaller touch targets for compact UI elements */
+    [data-slot="tabs-trigger"],
+    [data-size="icon"],
+    [data-size="icon-sm"] {
+      min-height: 36px;
+    }
+  }
 }

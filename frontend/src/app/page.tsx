@@ -60,11 +60,11 @@ export default function Home() {
     >
       <div className="flex flex-col h-screen bg-background">
         {/* Header */}
-        <header className="border-b px-4 py-3 flex items-center gap-2 flex-wrap">
-          <Zap className="h-5 w-5 text-primary" />
-          <h1 className="font-semibold text-lg">API Agent Explorer</h1>
+        <header className="border-b px-3 sm:px-4 py-2 sm:py-3 flex items-center gap-1.5 sm:gap-2 flex-wrap min-h-[48px]">
+          <Zap className="h-5 w-5 text-primary shrink-0" />
+          <h1 className="font-semibold text-base sm:text-lg truncate">API Agent Explorer</h1>
           {apiConfigs.map((config) => (
-            <Badge key={config.targetUrl} variant="outline" className="gap-1">
+            <Badge key={config.targetUrl} variant="outline" className="gap-1 text-xs max-w-[200px] sm:max-w-none">
               <span className="h-1.5 w-1.5 rounded-full bg-green-500 inline-block" />
               {config.apiType.toUpperCase()} &middot;{" "}
               {config.apiName ||
@@ -95,8 +95,8 @@ export default function Home() {
         {/* Main content */}
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
           {/* Left: API config + Chat */}
-          <div className="flex flex-col w-full lg:w-[420px] border-b lg:border-b-0 lg:border-r overflow-hidden">
-            <div className="p-3 border-b">
+          <div className="flex flex-col w-full lg:w-[420px] border-b lg:border-b-0 lg:border-r overflow-hidden min-h-0">
+            <div className="p-2 sm:p-3 border-b">
               <ApiConfigForm
                 onConnect={handleConnect}
                 isConnected={isConnected}
@@ -109,7 +109,7 @@ export default function Home() {
                 </p>
               )}
             </div>
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-hidden min-h-[250px] sm:min-h-[300px]">
               <ChatPanel
                 isConnected={isConnected}
                 onDataReceived={handleDataReceived}
@@ -118,7 +118,7 @@ export default function Home() {
           </div>
 
           {/* Right: Results panel */}
-          <main className="flex-1 overflow-auto p-4 space-y-4">
+          <main className="flex-1 overflow-auto p-2 sm:p-4 space-y-3 sm:space-y-4 min-h-0">
             {lastResult ? (
               <>
                 <DataDisplay result={lastResult} />

@@ -51,7 +51,7 @@ export function AutoChart({ data, config }: AutoChartProps) {
   switch (config.type) {
     case "bar":
       return (
-        <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+        <ChartContainer config={chartConfig} className="min-h-[200px] sm:min-h-[300px] w-full">
           <BarChart data={data} accessibilityLayer>
             <CartesianGrid vertical={false} />
             <XAxis dataKey={config.xKey} tickLine={false} axisLine={false} />
@@ -72,7 +72,7 @@ export function AutoChart({ data, config }: AutoChartProps) {
 
     case "line":
       return (
-        <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+        <ChartContainer config={chartConfig} className="min-h-[200px] sm:min-h-[300px] w-full">
           <LineChart data={data} accessibilityLayer>
             <CartesianGrid vertical={false} />
             <XAxis dataKey={config.xKey} tickLine={false} axisLine={false} />
@@ -95,7 +95,7 @@ export function AutoChart({ data, config }: AutoChartProps) {
 
     case "area":
       return (
-        <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+        <ChartContainer config={chartConfig} className="min-h-[200px] sm:min-h-[300px] w-full">
           <AreaChart data={data} accessibilityLayer>
             <CartesianGrid vertical={false} />
             <XAxis dataKey={config.xKey} tickLine={false} axisLine={false} />
@@ -118,7 +118,7 @@ export function AutoChart({ data, config }: AutoChartProps) {
 
     case "pie":
       return (
-        <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+        <ChartContainer config={chartConfig} className="min-h-[200px] sm:min-h-[300px] w-full">
           <PieChart accessibilityLayer>
             <ChartTooltip content={<ChartTooltipContent />} />
             <Pie

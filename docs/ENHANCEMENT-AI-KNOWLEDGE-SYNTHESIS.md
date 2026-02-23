@@ -39,7 +39,7 @@ The system integrates into the existing monorepo as a new `knowledge/` TypeScrip
 | # | Goal | Description |
 |---|------|-------------|
 | F1 | Multi-source ingestion | Crawl APIs, websites, PDFs, RSS feeds; normalize and deduplicate |
-| F2 | Entity extraction | Extract named entities (Person, Organization, Location, Event, Topic) |
+| F2 | Entity extraction | Extract named entities , this could be the headers or the metadata of the api, or the API docs or swagger |
 | F3 | Relationship extraction | Extract typed relationships between entities |
 | F4 | Knowledge graph storage | Store entities and relationships in Neo4j |
 | F5 | Hybrid retrieval | Combine graph traversal + vector similarity + metadata filtering |

@@ -19,7 +19,7 @@ The system integrates into the existing monorepo as a new `knowledge/` TypeScrip
 |-----------|--------|
 | `knowledge/` | **New** — TypeScript package: ingestion workers, preprocessing, Graph RAG engine, Mastra workflows |
 | `frontend/` | **Extended** — New "Knowledge" tab with synthesis UI, knowledge graph explorer |
-| `docker-compose.yml` | **Extended** — Add Qdrant, Neo4j, MinIO, knowledge-worker services |
+| `docker-compose.yml` | **Extended** — Add Qdrant, Neo4j, RustFS, knowledge-worker services |
 | `api_agent/` (Python) | **No changes** — Existing MCP server remains untouched |
 
 ### Key Design Principles
@@ -107,7 +107,7 @@ The system integrates into the existing monorepo as a new `knowledge/` TypeScrip
 │                    └──────────────┘ └───────────┘ │  RELATED_TO │         │
 │                                                    │  etc.       │         │
 │                    ┌───────────────────────┐       └─────────────┘         │
-│                    │ MinIO (S3) :9000      │                               │
+│                    │ RustFS (S3) :9000     │                               │
 │                    │ raw-documents bucket  │                               │
 │                    └───────────────────────┘                               │
 └───────────────────────────────────────────────────────────────────────────┘
@@ -124,7 +124,7 @@ The system integrates into the existing monorepo as a new `knowledge/` TypeScrip
 | Vector DB | Qdrant | Native Mastra integration via `@mastra/qdrant`; filtered search, clustering |
 | Graph DB | Neo4j | Industry-standard for knowledge graphs; Cypher for multi-hop queries |
 | Metadata Store | MongoDB (existing) | Already in Docker Compose; stores document metadata, ingestion jobs |
-| Object Storage | MinIO (S3-compatible) | Raw document archival; local S3 API, swap to AWS S3 in production |
+| Object Storage | RustFS (S3-compatible, Apache 2.0) | Raw document archival; local S3 API, swap to AWS S3 in production |
 | Embeddings | `text-embedding-3-small` (OpenAI) | Pluggable via Mastra embedding abstraction; 1536 dimensions |
 | Reranker | Cohere `rerank-v3.5` | Cross-encoder reranking for precision; abstracted behind interface |
 | LLM | Pluggable (OpenAI default) | For entity extraction and synthesis; configurable via env var |
@@ -150,7 +150,7 @@ knowledge/
 │   │   ├── api-loader.ts                 # REST/GraphQL API data loader
 │   │   ├── normalizer.ts                 # Content normalization (HTML→text)
 │   │   ├── deduplicator.ts               # Content-hash deduplication
-│   │   └── raw-store.ts                  # MinIO/S3 raw document storage
+│   │   └── raw-store.ts                  # RustFS/S3 raw document storage
 │   │
 │   ├── preprocessing/                    # Content processing pipeline
 │   │   ├── chunker.ts                    # Recursive text chunking (512-1000 tokens)
@@ -164,7 +164,7 @@ knowledge/
 │   │   ├── mongodb.ts                    # MongoDB adapter (metadata, documents, entities)
 │   │   ├── qdrant.ts                     # Qdrant adapter (vector storage + retrieval)
 │   │   ├── neo4j.ts                      # Neo4j adapter (knowledge graph CRUD)
-│   │   └── minio.ts                      # MinIO/S3 adapter (raw document storage)
+│   │   └── rustfs.ts                      # RustFS/S3 adapter (raw document storage)
 │   │
 │   ├── retrieval/                        # Hybrid retrieval engine
 │   │   ├── query-parser.ts               # NL query → entities + intent + filters
@@ -243,7 +243,7 @@ User submits URL(s) / uploads
 │ Step 2: Crawl      │──► Fetch content, follow links (configurable depth)
 │ Step 3: Normalize  │──► HTML→text, PDF→text, strip boilerplate
 │ Step 4: Dedup      │──► Content hash check against MongoDB
-│ Step 5: Store Raw  │──► Upload original to MinIO (s3://raw-docs/{docId})
+│ Step 5: Store Raw  │──► Upload original to RustFS (s3://raw-docs/{docId})
 │ Step 6: Metadata   │──► Insert document record into MongoDB
 │ Step 7: Trigger    │──► Emit preprocess event for next workflow
 └───────────────────┘
@@ -279,7 +279,7 @@ Document from ingestion
 │ PreprocessWorkflow       │
 │ (Mastra)                 │
 │                          │
-│ Step 1: Load raw content │──► Fetch from MinIO
+│ Step 1: Load raw content │──► Fetch from RustFS
 │ Step 2: Chunk            │──► Recursive splitting, 512-1000 tokens, 50 overlap
 │ Step 3: Embed            │──► Generate embeddings (batched, 100 chunks/request)
 │ Step 4: Entity Extract   │──► LLM extracts Person, Org, Location, Event
@@ -509,7 +509,7 @@ const crawlStep = new Step({
 const storeRawStep = new Step({
   id: "store-raw",
   execute: async ({ context }) => {
-    // Upload to MinIO, insert metadata into MongoDB
+    // Upload to RustFS, insert metadata into MongoDB
   },
 });
 
@@ -833,20 +833,20 @@ New services added to the existing `docker-compose.yml`:
       retries: 5
       start_period: 30s
 
-  minio:
-    image: minio/minio:latest
+  rustfs:
+    image: rustfs/rustfs:latest
     ports:
       - "9000:9000"
       - "9001:9001"
     environment:
-      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
+      - RUSTFS_ROOT_USER=${RUSTFS_ROOT_USER:-rustfsadmin}
+      - RUSTFS_ROOT_PASSWORD=${RUSTFS_ROOT_PASSWORD:-rustfsadmin}
     volumes:
-      - minio_data:/data
+      - rustfs_data:/data
     command: server /data --console-address ":9001"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -864,9 +864,9 @@ New services added to the existing `docker-compose.yml`:
       - NEO4J_URI=bolt://neo4j:7687
       - NEO4J_USER=neo4j
       - NEO4J_PASSWORD=${NEO4J_PASSWORD:-knowledge123}
-      - MINIO_ENDPOINT=minio:9000
-      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
-      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
+      - RUSTFS_ENDPOINT=rustfs:9000
+      - RUSTFS_ACCESS_KEY=${RUSTFS_ROOT_USER:-rustfsadmin}
+      - RUSTFS_SECRET_KEY=${RUSTFS_ROOT_PASSWORD:-rustfsadmin}
       - PORT=3002
     depends_on:
       mongodb:
@@ -887,7 +887,7 @@ volumes:
   mongo_data:
   qdrant_data:
   neo4j_data:
-  minio_data:
+  rustfs_data:
 ```
 
 ---
@@ -900,9 +900,9 @@ volumes:
 | `NEO4J_URI` | knowledge-worker | `bolt://neo4j:7687` | Neo4j Bolt URI |
 | `NEO4J_USER` | knowledge-worker | `neo4j` | Neo4j username |
 | `NEO4J_PASSWORD` | knowledge-worker, neo4j | `knowledge123` | Neo4j password |
-| `MINIO_ENDPOINT` | knowledge-worker | `minio:9000` | MinIO S3 endpoint |
-| `MINIO_ACCESS_KEY` | knowledge-worker | `minioadmin` | MinIO access key |
-| `MINIO_SECRET_KEY` | knowledge-worker | `minioadmin` | MinIO secret key |
+| `RUSTFS_ENDPOINT` | knowledge-worker | `rustfs:9000` | RustFS S3 endpoint |
+| `RUSTFS_ACCESS_KEY` | knowledge-worker | `rustfsadmin` | RustFS access key |
+| `RUSTFS_SECRET_KEY` | knowledge-worker | `rustfsadmin` | RustFS secret key |
 | `KNOWLEDGE_MODEL` | knowledge-worker | `gpt-4o` | LLM for extraction & synthesis |
 | `EMBEDDING_MODEL` | knowledge-worker | `text-embedding-3-small` | Embedding model |
 | `EMBEDDING_DIMENSIONS` | knowledge-worker | `1536` | Vector dimensions |
@@ -968,7 +968,7 @@ export interface IRawStore {
 - Qdrant distributed mode (3-node cluster, sharded collections)
 - Neo4j Enterprise with read replicas
 - 3+ knowledge-worker instances behind load balancer
-- MinIO distributed mode (4+ nodes)
+- RustFS distributed mode (4+ nodes)
 
 ### Phase 3: Large Scale (1TB+)
 
@@ -1070,7 +1070,7 @@ Integrates with existing OpenTelemetry setup — traces exported to same OTLP co
 | Qdrant unavailable | Circuit breaker; queue writes; Neo4j+MongoDB fallback |
 | Neo4j unavailable | Circuit breaker; vector-only retrieval (degraded) |
 | Embedding drift | Store model version; detect distribution shift; trigger re-index |
-| MinIO unavailable | Queue uploads; continue with in-memory raw content |
+| RustFS unavailable | Queue uploads; continue with in-memory raw content |
 
 ---
 
@@ -1079,8 +1079,8 @@ Integrates with existing OpenTelemetry setup — traces exported to same OTLP co
 ### Phase 1: Foundation (Week 1-2)
 
 - [ ] Initialize `knowledge/` package (Bun, TypeScript, Hono)
-- [ ] Storage interfaces and adapters (MongoDB, Qdrant, Neo4j, MinIO)
-- [ ] Add Qdrant, Neo4j, MinIO to docker-compose.yml
+- [ ] Storage interfaces and adapters (MongoDB, Qdrant, Neo4j, RustFS)
+- [ ] Add Qdrant, Neo4j, RustFS to docker-compose.yml
 - [ ] Basic ingestion: URL fetch → normalize → store raw → metadata
 - [ ] Chunking and embedding pipeline
 - [ ] Unit tests for ingestion, chunking, embedding
@@ -1257,7 +1257,7 @@ CMD ["bun", "dist/index.js"]
 | Qdrant Cloud | 30M vectors, 3-node | ~$300 |
 | Neo4j Aura | 5M nodes, Professional | ~$200 |
 | MongoDB Atlas | M10 shared replica | ~$60 |
-| MinIO / S3 | 200GB storage | ~$5 |
+| RustFS / S3 | 200GB storage | ~$5 |
 | OpenAI Embeddings | 30M chunks (one-time) | ~$300 |
 | OpenAI GPT-4o | Extraction + synthesis | ~$200-500 |
 | Compute (3 workers) | 2 vCPU, 4GB each | ~$150 |

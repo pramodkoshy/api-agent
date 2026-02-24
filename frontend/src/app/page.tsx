@@ -7,16 +7,19 @@ import type { StructuredData } from "@/types/query-result";
 import { ApiConfigForm } from "@/components/api-config-form";
 import { ChatPanel } from "@/components/chat-panel";
 import { DataDisplay } from "@/components/data-display";
+import { KnowledgePage } from "@/components/knowledge/knowledge-page";
 import { parseAgentResponse } from "@/lib/data-inference";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Zap, Database, Plus, X } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Zap, Database, Plus, X, Brain } from "lucide-react";
 
 export default function Home() {
   // Support multiple API connections
   const [apiConfigs, setApiConfigs] = useState<ApiConfig[]>([]);
   const [lastResult, setLastResult] = useState<StructuredData | null>(null);
   const [resultHistory, setResultHistory] = useState<StructuredData[]>([]);
+  const [activeTab, setActiveTab] = useState<string>("explorer");
 
   const isConnected = apiConfigs.length > 0;
 
@@ -63,7 +66,21 @@ export default function Home() {
         <header className="border-b px-3 sm:px-4 py-2 sm:py-3 flex items-center gap-1.5 sm:gap-2 flex-wrap min-h-[48px]">
           <Zap className="h-5 w-5 text-primary shrink-0" />
           <h1 className="font-semibold text-base sm:text-lg truncate">API Agent Explorer</h1>
-          {apiConfigs.map((config) => (
+
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="ml-auto">
+            <TabsList className="h-8">
+              <TabsTrigger value="explorer" className="text-xs px-3 h-7">
+                <Database className="h-3.5 w-3.5 mr-1" />
+                API Explorer
+              </TabsTrigger>
+              <TabsTrigger value="knowledge" className="text-xs px-3 h-7">
+                <Brain className="h-3.5 w-3.5 mr-1" />
+                Knowledge Synthesis
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          {activeTab === "explorer" && apiConfigs.map((config) => (
             <Badge key={config.targetUrl} variant="outline" className="gap-1 text-xs max-w-[200px] sm:max-w-none">
               <span className="h-1.5 w-1.5 rounded-full bg-green-500 inline-block" />
               {config.apiType.toUpperCase()} &middot;{" "}
@@ -80,7 +97,7 @@ export default function Home() {
               </button>
             </Badge>
           ))}
-          {isConnected && (
+          {activeTab === "explorer" && isConnected && (
             <Button
               variant="ghost"
               size="sm"
@@ -93,67 +110,73 @@ export default function Home() {
         </header>
 
         {/* Main content */}
-        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-          {/* Left: API config + Chat */}
-          <div className="flex flex-col w-full lg:w-[420px] border-b lg:border-b-0 lg:border-r overflow-hidden min-h-0">
-            <div className="p-2 sm:p-3 border-b">
-              <ApiConfigForm
-                onConnect={handleConnect}
-                isConnected={isConnected}
-                onDisconnect={handleDisconnectAll}
-              />
-              {isConnected && (
-                <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                  <Plus className="h-3 w-3" />
-                  Add more APIs above to combine data from multiple sources
-                </p>
-              )}
-            </div>
-            <div className="flex-1 overflow-hidden min-h-[250px] sm:min-h-[300px]">
-              <ChatPanel
-                isConnected={isConnected}
-                onDataReceived={handleDataReceived}
-              />
-            </div>
-          </div>
-
-          {/* Right: Results panel */}
-          <main className="flex-1 overflow-auto p-2 sm:p-4 space-y-3 sm:space-y-4 min-h-0">
-            {lastResult ? (
-              <>
-                <DataDisplay result={lastResult} />
-                {resultHistory.length > 1 && (
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-medium text-muted-foreground">
-                      Previous Results
-                    </h3>
-                    {resultHistory.slice(1).map((r, i) => (
-                      <div key={i} className="opacity-70">
-                        <DataDisplay result={r} />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3">
-                <Database className="h-12 w-12 opacity-20" />
-                <div className="text-center space-y-1">
-                  <p className="text-sm">
-                    {isConnected
-                      ? "Query results will appear here as tables and charts"
-                      : "Connect to an API and ask a question to see results"}
+        {activeTab === "explorer" ? (
+          <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+            {/* Left: API config + Chat */}
+            <div className="flex flex-col w-full lg:w-[420px] border-b lg:border-b-0 lg:border-r overflow-hidden min-h-0">
+              <div className="p-2 sm:p-3 border-b">
+                <ApiConfigForm
+                  onConnect={handleConnect}
+                  isConnected={isConnected}
+                  onDisconnect={handleDisconnectAll}
+                />
+                {isConnected && (
+                  <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                    <Plus className="h-3 w-3" />
+                    Add more APIs above to combine data from multiple sources
                   </p>
-                  {isConnected && (
-                    <p className="text-xs opacity-60">
-                      Results can be saved to MongoDB, combined, and queried later
-                    </p>
-                  )}
-                </div>
+                )}
               </div>
-            )}
-          </main>
-        </div>
+              <div className="flex-1 overflow-hidden min-h-[250px] sm:min-h-[300px]">
+                <ChatPanel
+                  isConnected={isConnected}
+                  onDataReceived={handleDataReceived}
+                />
+              </div>
+            </div>
+
+            {/* Right: Results panel */}
+            <main className="flex-1 overflow-auto p-2 sm:p-4 space-y-3 sm:space-y-4 min-h-0">
+              {lastResult ? (
+                <>
+                  <DataDisplay result={lastResult} />
+                  {resultHistory.length > 1 && (
+                    <div className="space-y-2">
+                      <h3 className="text-sm font-medium text-muted-foreground">
+                        Previous Results
+                      </h3>
+                      {resultHistory.slice(1).map((r, i) => (
+                        <div key={i} className="opacity-70">
+                          <DataDisplay result={r} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3">
+                  <Database className="h-12 w-12 opacity-20" />
+                  <div className="text-center space-y-1">
+                    <p className="text-sm">
+                      {isConnected
+                        ? "Query results will appear here as tables and charts"
+                        : "Connect to an API and ask a question to see results"}
+                    </p>
+                    {isConnected && (
+                      <p className="text-xs opacity-60">
+                        Results can be saved to MongoDB, combined, and queried later
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </main>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-hidden">
+            <KnowledgePage />
+          </div>
+        )}
       </div>
     </CopilotKit>
   );
